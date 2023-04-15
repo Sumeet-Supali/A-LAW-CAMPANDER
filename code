@@ -1,0 +1,58 @@
+clc;clear all;close all;
+%loading audio file from matlab
+load handel.mat
+
+%reading audio file
+filename = 'handel.wav';
+audiowrite(filename,y,Fs);
+clear y Fs
+[y,Fs] = audioread('handel.wav');
+info = audioinfo('handel.wav')
+%sound(y,Fs);
+
+%increaseing the amplitude
+y = exp(5*y);
+
+%time domain analysis
+%the audio file has 256 qe levels which is 3 bits assign to per amplitude 
+t = 0:seconds(1/Fs):seconds(info.Duration); %time array
+t = t(1:end-1); % time index adjusting
+figure(1);
+plot(t,y); xlabel('time'); ylabel('amplitude'); title('original audio signal');
+
+
+%linear/uniform quantization
+L = 15; %converting 256 to 16 level quantisation
+V = max(y);
+[index,quants,distog_linear] = quantiz(y,multithresh(y,L),[multithresh(y,L) V] );
+figure(2);
+subplot(211);
+plot(t,quants);
+xlabel('time'); ylabel('amplitude'); title('linear quantised audio signal');
+subplot(212); plot(t,y); xlabel('time'); ylabel('amplitude'); title('original audio signal');
+% non uniform quantisation
+% A Law campanding
+
+Alaw_param = 87.56;
+compressor = compand(y,Alaw_param,max(y),'A/compressor'); % compressing the amplitude ie. strong signal - attunate weak signal amplify (increase snr)
+[index_A,quants_A,distog_linear_A] = quantiz(compressor,multithresh(y,L),[multithresh(y,L) V] );
+expander = compand(quants_A,Alaw_param,max(quants_A),'A/expander');
+figure(3);
+subplot(211);
+plot(t,expander);
+xlabel('time'); ylabel('amplitude'); title('A-LAW quantised audio signal');
+subplot(212); plot(t,y); xlabel('time'); ylabel('amplitude'); title('original audio signal');
+
+%error power
+distor_linear = distog_linear
+distor_A = sum((expander'-y).^2)/(length(y))
+
+output:-
+distor_linear =
+
+    5.9974
+
+
+distor_A =
+
+    0.5394
